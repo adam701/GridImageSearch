@@ -3,15 +3,22 @@ package com.example.girdimagesearch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import android.util.Log;
 import android.widget.AbsListView;
 import android.widget.AbsListView.OnScrollListener;
 
 public abstract class EndlessScrollListener implements OnScrollListener {
 	// The minimum amount of items to have below your current scroll position
 	// before loading more.
-	private int visibleThreshold = 12;
+	private int visibleThreshold = 6;
+	// The current offset index of data you have loaded
+	private int currentPage = 0;
 	// The total number of items in the dataset after the last load
-	private AtomicInteger loadingOffset = new AtomicInteger(0);
+	private int previousTotalItemCount = 0;
+	// True if we are still waiting for the last set of data to load.
+	private boolean loading = true;
+	// Sets the starting page index
+	private int startingPageIndex = 0;
 	
 
 	public EndlessScrollListener() {
@@ -26,24 +33,41 @@ public abstract class EndlessScrollListener implements OnScrollListener {
 	// but first we check if we are waiting for the previous load to finish.
 	@Override
 	public void onScroll(AbsListView view,int firstVisibleItem,int visibleItemCount,int totalItemCount) {
-		if ((loadingOffset.get() - visibleItemCount) <= (firstVisibleItem + visibleThreshold)) {
-			onLoadMore(loadingOffset.get());
+
+		// If the total item count is zero and the previous isn't, assume the
+		// list is invalidated and should be reset back to initial state
+		if (totalItemCount < previousTotalItemCount) {
+			this.currentPage = this.startingPageIndex;
+			this.previousTotalItemCount = totalItemCount;
+			if (totalItemCount == 0) { 
+				this.loading = true; 
+			} 
+		}
+
+		// If its still loading, we check to see if the dataset count has
+		// changed, if so we conclude it has finished loading and update the current page
+		// number and total item count.
+		if (loading && (totalItemCount > previousTotalItemCount)) {
+			loading = false;
+			previousTotalItemCount = totalItemCount;
+			currentPage++;
+		}
+		
+		// If it isnt currently loading, we check to see if we have breached
+		// the visibleThreshold and need to reload more data.
+		// If we do need to reload some more data, we execute onLoadMore to fetch the data.
+		if (!loading && (totalItemCount - visibleItemCount) <= (firstVisibleItem + visibleThreshold)) {
+		    onLoadMore(currentPage);
+		    loading = true;
 		}
 	}
 
 	// Defines the process for actually loading more data based on page
-	public abstract void onLoadMore(int totalItemsCount);
+	public abstract void onLoadMore(int nextPage);
 
 	@Override
 	public void onScrollStateChanged(AbsListView view, int scrollState) {
 		// Don't take any action on changed
 	}
-	
-	protected void increaseLoadingOffset(int offset){
-		this.loadingOffset.addAndGet(offset);
-	}
-	
-	public void resetOffset(){
-		this.loadingOffset.set(0);
-	}
+
 }

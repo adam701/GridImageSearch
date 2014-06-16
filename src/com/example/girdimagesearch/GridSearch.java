@@ -44,13 +44,13 @@ public class GridSearch extends Activity {
 	private final LinkedBlockingQueue<ImageResult> queue = new LinkedBlockingQueue<>();
 	private SearchConfig searchConfig;
 	private static final int PAGES = 8;
-	private static final String BASE_URL = "https://ajax.googleapis.com/ajax/services/search/images?rsz="+ PAGES + "&v=1.0&";
+	private static final String BASE_URL = "https://ajax.googleapis.com/ajax/services/search/images?rsz="
+			+ PAGES + "&v=1.0&";
 	private static ObjectMapper mapper = new ObjectMapper();
 	private String currentSearchQuery;
 	private static final int LOAD_LOOP = 4;
 	private EndlessScrollListener endlessScrollListener;
-	
-	
+
 	static {
 		mapper.enable(SerializationFeature.INDENT_OUTPUT);
 		mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
@@ -63,25 +63,15 @@ public class GridSearch extends Activity {
 		setContentView(R.layout.activity_main);
 		setUpViews();
 		/*
-		Thread loadImage = new Thread(new Runnable() {
-
-			@Override
-			public void run() {
-				while (true) {
-					ImageResult newImg;
-					try {
-						newImg = queue.take();
-						adapter.add(newImg);
-					} catch (InterruptedException e) {
-						Thread.currentThread().interrupt();
-						break;
-					}
-				}
-			}
-			
-		});
-		loadImage.start();
-		*/
+		 * Thread loadImage = new Thread(new Runnable() {
+		 * 
+		 * @Override public void run() { while (true) { ImageResult newImg; try
+		 * { newImg = queue.take(); adapter.add(newImg); } catch
+		 * (InterruptedException e) { Thread.currentThread().interrupt(); break;
+		 * } } }
+		 * 
+		 * }); loadImage.start();
+		 */
 	}
 
 	private void setUpViews() {
@@ -106,53 +96,52 @@ public class GridSearch extends Activity {
 		endlessScrollListener = new EndlessScrollListener() {
 
 			@Override
-			public void onLoadMore(int totalItemsCount) {
-				increaseLoadingOffset(loadImages(totalItemsCount));
+			public void onLoadMore(int nextPage) {
+				Log.d("DEBUG", "On Scroll Listener!" + "nextPage is "
+						+ nextPage);
+				Log.d("DEBUG", "Begin to load image! Next Page is " + nextPage);
+				loadImages(nextPage);
 			}
 
 		};
 		this.gvResult.setOnScrollListener(endlessScrollListener);
 	}
-	
-	public void onImageSearch(View v){
+
+	public void onImageSearch(View v) {
 		currentSearchQuery = this.etQuery.getText().toString();
 		Log.d("DEBUG", "Current Search Query is " + currentSearchQuery);
 		adapter.clear();
-		endlessScrollListener.resetOffset();
 		Log.d("DEBUG", "adapter is cleared");
 		loadImages(0);
 	}
 
-	public int loadImages(int offset){
-		if(currentSearchQuery == null || "".equalsIgnoreCase(currentSearchQuery.trim())){
-			return 0;
+	public void loadImages(int nextPage) {
+		if (currentSearchQuery == null
+				|| "".equalsIgnoreCase(currentSearchQuery.trim())) {
+			return;
 		}
 		Toast.makeText(this, "Search " + currentSearchQuery, Toast.LENGTH_SHORT)
 				.show();
 		// Google Image Search
 		// https://ajax.googleapis.com/ajax/services/search/images?v=1.0&q=barack
 		AsyncHttpClient client = new AsyncHttpClient();
-		//client.setTimeout(2000);
-		for (int i = 0; i < 4; i++) {
-			Log.d("DEBUG", "Offset is " + offset);
-			Toast.makeText(this, getQueryString(offset), Toast.LENGTH_SHORT).show();
-			RequestHandle handler = client.get(getQueryString(offset), new JsonHttpResponseHandler() {
-				@Override
-				public void onSuccess(JSONObject json) {
-					try {
-						JSONArray array = json.getJSONObject("responseData")
-								.getJSONArray("results");
-						// adapter.clear();
-						adapter.addAll(ImageResult.toImageResultArray(array));
-						Log.d("DEBUG", imageResults.toString());
-					} catch (JSONException e) {
-						e.printStackTrace();
-					}
+		// client.setTimeout(2000);
+		int offset = nextPage * PAGES;
+		Log.d("DEBUG", "Offset is " + offset);
+		Toast.makeText(this, getQueryString(offset), Toast.LENGTH_SHORT).show();
+		client.get(getQueryString(offset), new JsonHttpResponseHandler() {
+			@Override
+			public void onSuccess(JSONObject json) {
+				try {
+					JSONArray array = json.getJSONObject("responseData")
+							.getJSONArray("results");
+					adapter.addAll(ImageResult.toImageResultArray(array));
+					Log.d("DEBUG", imageResults.toString());
+				} catch (JSONException e) {
+					e.printStackTrace();
 				}
-			});
-			offset += 8;
-		}
-		return PAGES * LOAD_LOOP;
+			}
+		});
 	}
 
 	@Override
