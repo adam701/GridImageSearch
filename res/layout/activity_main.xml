@@ -1,0 +1,43 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="${packageName}.${activityClass}" >
+
+    <EditText
+        android:id="@+id/etQuery"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_toLeftOf="@+id/smtImgvFullImage"
+        android:ems="10"
+        android:hint="@string/searchQuery" >
+
+        <requestFocus />
+    </EditText>
+
+    <Button
+        android:id="@+id/smtImgvFullImage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignBottom="@+id/etQuery"
+        android:layout_alignTop="@+id/etQuery"
+        android:onClick="onImageSearch"
+        android:text="@string/Search" />
+
+    <GridView
+        android:id="@+id/gvResults"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/etQuery"
+        android:numColumns="3" >
+
+    </GridView>
+
+</RelativeLayout>
